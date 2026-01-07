@@ -7,7 +7,10 @@ const bot = new TelegramBot(token);
 const app = express();
 
 app.use(express.json());
-
+app.get('/webhook', (req, res) => {
+  console.log('✅ GET /webhook - сервер доступен');
+  res.send('Telegram Bot Webhook');
+});
 // Вебхук endpoint
 app.post('/webhook', (req, res) => {
   bot.processUpdate(req.body);
