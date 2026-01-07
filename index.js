@@ -3,28 +3,21 @@ const app = express();
 
 app.use(express.json());
 
-// Обрабатываем HEAD-запросы (Telegram проверяет)
-app.head('/webhook', (req, res) => {
-  console.log('HEAD /webhook');
-  res.sendStatus(200);
-});
-
+// Telegram будет проверять этот endpoint
 app.get('/webhook', (req, res) => {
-  console.log('GET /webhook');
+  console.log('GET /webhook - проверка');
   res.send('OK');
 });
 
+// Основной endpoint
 app.post('/webhook', (req, res) => {
-  console.log('POST /webhook получил данные');
-  // Важно: сначала ответ, потом логирование
-  res.sendStatus(200);
-  
-  // Логируем тело запроса
-  console.log('Тело:', JSON.stringify(req.body));
+  console.log('POST /webhook получил:', JSON.stringify(req.body));
+  res.sendStatus(200); // ВАЖНО: сразу отвечаем
 });
 
+// Корень для проверки
 app.get('/', (req, res) => {
-  res.send('Bot is alive');
+  res.send('Сервер работает');
 });
 
 const PORT = process.env.PORT || 3000;
