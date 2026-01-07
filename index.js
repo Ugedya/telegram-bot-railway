@@ -6,7 +6,9 @@ app.use(express.json());
 
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token);
-
+bot.on('raw', (update) => {
+  console.log('📦 RAW update:', JSON.stringify(update));
+});
 // Telegram будет проверять этот endpoint
 app.get('/webhook', (req, res) => {
   console.log('GET /webhook - проверка');
