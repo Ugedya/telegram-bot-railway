@@ -38,7 +38,15 @@ bot.on('web_app_data', (msg) => {
   console.log('🎮 Данные от игры:', msg.web_app_data.data);
   bot.sendMessage(msg.chat.id, `✅ Получил: ${msg.web_app_data.data}`);
 });
-
+app.post('/api/game-result', (req, res) => {
+  console.log('🎮 Результат игры:', req.body);
+  const { user_id, data } = req.body;
+  
+  // Отправляем сообщение пользователю
+  bot.sendMessage(user_id, `✅ Получил результат: ${data}`);
+  
+  res.sendStatus(200);
+});
 // Корень для проверки
 app.get('/', (req, res) => {
   res.send('Сервер работает');
