@@ -92,9 +92,7 @@ app.post('/api/game-result', (req, res) => {
   
   // 2. Если проверка прошла
   console.log('✅ Данные проверены, результат:', data);
-  
-  // 3. Отправляем сообщение
-  bot.sendMessage(user_id, `✅ Получил: ${data}`);
+
   
   // Если игра "Угадай число"
 if (data.startsWith('win:')) {
