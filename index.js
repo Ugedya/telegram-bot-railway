@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const TelegramBot = require('node-telegram-bot-api');
 
 const app = express();
