@@ -93,45 +93,43 @@ app.post('/api/game-result', async (req, res) => {
     console.error('❌ Неверные данные Telegram!');
     return res.status(403).send('Access denied');
   }
-  // 2. Если проверка прошла
-console.log('✅ Данные проверены, результат:', data);
-
-// 3. Сохраняем результат в базу данных
-try {
-  const gameType = data.startsWith('win:') ? 'guess_number' : 'other';
   
-  const { error } = await supabase
-    .from('game_results')
-    .insert([
-      {
-        user_id: user_id,
-        game_type: gameType,
-        result: data
-      }
-    ]);
-
-  if (error) {
-    console.error('❌ Ошибка сохранения в базу:', error);
-  } else {
-    console.log('💾 Результат сохранён в базу');
-  }
-} catch (dbError) {
-  console.error('❌ Ошибка подключения к базе:', dbError);
-}
   // 2. Если проверка прошла
   console.log('✅ Данные проверены, результат:', data);
 
+  // 3. Сохраняем результат в базу данных
+  try {
+    const gameType = data.startsWith('win:') ? 'guess_number' : 'other';
+    
+    const { error } = await supabase
+      .from('game_results')
+      .insert([
+        {
+          user_id: user_id,
+          game_type: gameType,
+          result: data
+        }
+      ]);
+
+    if (error) {
+      console.error('❌ Ошибка сохранения в базу:', error);
+    } else {
+      console.log('💾 Результат сохранён в базу');
+    }
+  } catch (dbError) {
+    console.error('❌ Ошибка подключения к базе:', dbError);
+  }
   
-  // Если игра "Угадай число"
-if (data.startsWith('win:')) {
-  const attempts = data.split(':')[1];
-  bot.sendMessage(user_id, `🎉 Ты угадал число с ${attempts} попытки!`);
-} else {
-  // Для других игр
-  bot.sendMessage(user_id, `✅ Результат: ${data}`);
-}
-         res.sendStatus(200);
-  });
+  // 4. Отправляем сообщение пользователю
+  if (data.startsWith('win:')) {
+    const attempts = data.split(':')[1];
+    bot.sendMessage(user_id, `🎉 Ты угадал число с ${attempts} попытки!`);
+  } else {
+    bot.sendMessage(user_id, `✅ Результат: ${data}`);
+  }
+  
+  res.sendStatus(200);
+});
 // Корень для проверки
 app.get('/', (req, res) => {
   res.send('Сервер работает');
