@@ -1,1 +1,148 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Дашборд игр Telegram Mini App</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; min-height: 100vh; padding: 20px; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        header { text-align: center; margin-bottom: 40px; padding: 20px; }
+        h1 { font-size: 2.8rem; margin-bottom: 10px; }
+        .subtitle { font-size: 1.2rem; opacity: 0.9; }
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .card { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); border-radius: 20px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+        .card h2 { font-size: 1.5rem; margin-bottom: 15px; color: #FFD700; }
+        .total-number { font-size: 4rem; font-weight: bold; text-align: center; color: #00FF9D; }
+        .chart-container { height: 300px; margin-top: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        th { background: rgba(255,255,255,0.05); }
+        .user-id { font-family: monospace; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 5px; }
+        .loading { text-align: center; font-size: 1.5rem; padding: 50px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📊 Дашборд TMA Games</h1>
+            <p class="subtitle">Статистика по играм в реальном времени | Портфолио разработчика Telegram Mini Apps</p>
+        </header>
 
+        <div class="stats-grid">
+            <div class="card">
+                <h2>🎮 Всего сыграно игр</h2>
+                <div class="total-number" id="totalGames">0</div>
+            </div>
+            <div class="card">
+                <h2>📈 Распределение по играм</h2>
+                <div class="chart-container">
+                    <canvas id="gamesChart"></canvas>
+                </div>
+            </div>
+            <div class="card">
+                <h2>🕒 Последние игры</h2>
+                <div id="recentTable">
+                    <table>
+                        <thead><tr><th>Игра</th><th>Результат</th><th>Время</th></tr></thead>
+                        <tbody id="recentGamesBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📊 Подробная статистика</h2>
+            <div class="chart-container">
+                <canvas id="timelineChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // API-адрес твоего сервера
+        const API_URL = 'https://telegram-bot-railway-production-0184.up.railway.app/api/stats'; 
+
+        async function loadStats() {
+            try {
+                const response = await fetch(API_URL);
+                const result = await response.json();
+                
+                if (!result.success) throw new Error('Ошибка API');
+                
+                const data = result.data;
+                updateDashboard(data);
+            } catch (error) {
+                console.error('❌ Ошибка загрузки статистики:', error);
+                document.body.innerHTML = `<div class="loading">⚠️ Не удалось загрузить данные. Проверь API_URL.</div>`;
+            }
+        }
+
+        function updateDashboard(data) {
+            // 1. Общее количество игр
+            document.getElementById('totalGames').textContent = data.totalGames;
+
+            // 2. Круговая диаграмма
+            const gamesByType = data.gamesByType;
+            const pieCtx = document.getElementById('gamesChart').getContext('2d');
+            new Chart(pieCtx, {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(gamesByType).map(k => k === 'guess_number' ? 'Угадай число' : k),
+                    datasets: [{
+                        data: Object.values(gamesByType),
+                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: 'white' } } }
+                }
+            });
+
+            // 3. Таблица последних игр
+            const recentBody = document.getElementById('recentGamesBody');
+            recentBody.innerHTML = '';
+            data.recentGames.forEach(game => {
+                const row = `<tr>
+                    <td>${game.game_type === 'guess_number' ? '🔢 Угадай число' : '✂️ RPS'}</td>
+                    <td><span class="user-id">${game.result}</span></td>
+                    <td>${new Date(game.created_at).toLocaleString('ru-RU')}</td>
+                </tr>`;
+                recentBody.innerHTML += row;
+            });
+
+            // 4. График по времени (заглушка для примера)
+            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+            new Chart(timelineCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                    datasets: [{
+                        label: 'Активность (игр/день)',
+                        data: [3, 7, 12, 5, 9, 15, 8],
+                        borderColor: '#00FF9D',
+                        backgroundColor: 'rgba(0, 255, 157, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: 'white' } } },
+                    scales: {
+                        x: { ticks: { color: 'white' } },
+                        y: { ticks: { color: 'white' } }
+                    }
+                }
+            });
+        }
+
+        // Загружаем данные при старте
+        loadStats();
+        // Обновляем каждые 30 секунд
+        setInterval(loadStats, 30000);
+    </script>
+</body>
+</html>
