@@ -69,94 +69,108 @@
     </div>
 
     <script>
-        const API_URL = 'https://telegram-bot-railway-production-0184.up.railway.app/api/stats';
+    const API_URL = 'https://telegram-bot-railway-production-0184.up.railway.app/api/stats';
+    
+    // Переменные для хранения экземпляров графиков
+    let pieChart = null;
+    let timelineChart = null;
 
-        async function loadStats() {
-            try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 45000);
-                
-                const response = await fetch(API_URL, { signal: controller.signal });
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                
-                const result = await response.json();
-                if (!result.success) throw new Error('API error');
-                
-                document.getElementById('loadingIndicator').style.display = 'none';
-                document.getElementById('errorMessage').style.display = 'none';
-                document.getElementById('dashboardContent').style.display = 'grid';
-                document.getElementById('timelineCard').style.display = 'block';
-                
-                updateDashboard(result.data);
-            } catch (error) {
-                console.log('⚠️', error.message);
-                document.getElementById('loadingIndicator').innerHTML = 
-                    `⏳ Сервер просыпается... Пробуем ещё раз через 5 сек <br><small>${error.message}</small>`;
-                document.getElementById('loadingIndicator').style.display = 'block';
-                
-                setTimeout(loadStats, 5000);
+    async function loadStats() {
+        try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 45000);
+            
+            const response = await fetch(API_URL, { signal: controller.signal });
+            clearTimeout(timeoutId);
+            
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            
+            const result = await response.json();
+            if (!result.success) throw new Error('API error');
+            
+            document.getElementById('loadingIndicator').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'none';
+            document.getElementById('dashboardContent').style.display = 'grid';
+            document.getElementById('timelineCard').style.display = 'block';
+            
+            updateDashboard(result.data);
+        } catch (error) {
+            console.log('⚠️', error.message);
+            document.getElementById('loadingIndicator').innerHTML = 
+                `⏳ Сервер просыпается... Пробуем ещё раз через 5 сек <br><small>${error.message}</small>`;
+            document.getElementById('loadingIndicator').style.display = 'block';
+            
+            setTimeout(loadStats, 5000);
+        }
+    }
+
+    function updateDashboard(data) {
+        document.getElementById('totalGames').textContent = data.totalGames;
+
+        // Уничтожаем старый график, если он существует
+        if (pieChart) {
+            pieChart.destroy();
+        }
+        
+        const gamesByType = data.gamesByType;
+        const pieCtx = document.getElementById('gamesChart').getContext('2d');
+        pieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: Object.keys(gamesByType).map(k => k === 'guess_number' ? 'Угадай число' : k),
+                datasets: [{
+                    data: Object.values(gamesByType),
+                    backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: 'white' } } }
             }
+        });
+
+        const recentBody = document.getElementById('recentGamesBody');
+        recentBody.innerHTML = '';
+        data.recentGames.forEach(game => {
+            const row = `<tr>
+                <td>${game.game_type === 'guess_number' ? '🔢 Угадай число' : '✂️ RPS'}</td>
+                <td><span class="user-id">${game.result}</span></td>
+                <td>${new Date(game.created_at).toLocaleString('ru-RU')}</td>
+            </tr>`;
+            recentBody.innerHTML += row;
+        });
+
+        // Уничтожаем старый график, если он существует
+        if (timelineChart) {
+            timelineChart.destroy();
         }
-
-        function updateDashboard(data) {
-            document.getElementById('totalGames').textContent = data.totalGames;
-
-            const gamesByType = data.gamesByType;
-            const pieCtx = document.getElementById('gamesChart').getContext('2d');
-            new Chart(pieCtx, {
-                type: 'pie',
-                data: {
-                    labels: Object.keys(gamesByType).map(k => k === 'guess_number' ? 'Угадай число' : k),
-                    datasets: [{
-                        data: Object.values(gamesByType),
-                        backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: 'white' } } }
+        
+        const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+        timelineChart = new Chart(timelineCtx, {
+            type: 'line',
+            data: {
+                labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
+                datasets: [{
+                    label: 'Активность (игр/день)',
+                    data: [data.totalGames, 0, 0, 0, 0, 0, 0],
+                    borderColor: '#00FF9D',
+                    backgroundColor: 'rgba(0, 255, 157, 0.1)',
+                    tension: 0.4
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { labels: { color: 'white' } } },
+                scales: {
+                    x: { ticks: { color: 'white' } },
+                    y: { ticks: { color: 'white' } }
                 }
-            });
+            }
+        });
+    }
 
-            const recentBody = document.getElementById('recentGamesBody');
-            recentBody.innerHTML = '';
-            data.recentGames.forEach(game => {
-                const row = `<tr>
-                    <td>${game.game_type === 'guess_number' ? '🔢 Угадай число' : '✂️ RPS'}</td>
-                    <td><span class="user-id">${game.result}</span></td>
-                    <td>${new Date(game.created_at).toLocaleString('ru-RU')}</td>
-                </tr>`;
-                recentBody.innerHTML += row;
-            });
-
-            const timelineCtx = document.getElementById('timelineChart').getContext('2d');
-            new Chart(timelineCtx, {
-                type: 'line',
-                data: {
-                    labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
-                    datasets: [{
-                        label: 'Активность (игр/день)',
-                        data: [data.totalGames, 0, 0, 0, 0, 0, 0],
-                        borderColor: '#00FF9D',
-                        backgroundColor: 'rgba(0, 255, 157, 0.1)',
-                        tension: 0.4
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: 'white' } } },
-                    scales: {
-                        x: { ticks: { color: 'white' } },
-                        y: { ticks: { color: 'white' } }
-                    }
-                }
-            });
-        }
-
-        loadStats();
-        setInterval(loadStats, 30000);
-    </script>
+    loadStats();
+    setInterval(loadStats, 30000);
+</script>
 </body>
 </html>
