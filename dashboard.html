@@ -140,11 +140,14 @@
         }
 
         // Загружаем данные при старте
-        async function loadStats() {
+    async function loadStats() {
+    // Показываем индикатор загрузки
+    document.getElementById('loadingIndicator').style.display = 'block';
+    document.getElementById('errorMessage').style.display = 'none';
+    
     try {
-        // Увеличиваем таймаут запроса до 60 секунд
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
+        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 секунд
         
         const response = await fetch(API_URL, { signal: controller.signal });
         clearTimeout(timeoutId);
@@ -152,22 +155,22 @@
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
         const result = await response.json();
-        if (!result.success) throw new Error('Ошибка в данных API');
+        if (!result.success) throw new Error('API error');
         
+        // Скрываем индикатор, показываем данные
+        document.getElementById('loadingIndicator').style.display = 'none';
         updateDashboard(result.data);
-        document.getElementById('errorMessage').style.display = 'none';
-    } catch (error) {
-        console.log('⚠️ Ошибка загрузки (возможно, сервер "просыпается"):', error.message);
-        // Не очищаем дашборд, показываем сообщение
-        document.getElementById('errorMessage').innerHTML = 
-            `⏳ Сервер просыпается... Обновлю через 10 сек. <br><small>${error.message}</small>`;
-        document.getElementById('errorMessage').style.display = 'block';
         
-        // Повторяем запрос через 10 секунд
-        setTimeout(loadStats, 10000);
+    } catch (error) {
+        console.log('⚠️', error.message);
+        document.getElementById('loadingIndicator').innerHTML = 
+            '⏳ Сервер просыпается... Пробуем ещё раз через 5 сек';
+        document.getElementById('loadingIndicator').style.display = 'block';
+        
+        // Повторяем через 5 секунд
+        setTimeout(loadStats, 5000);
     }
-}
-        // Обновляем каждые 30 секунд
+}   // Обновляем каждые 30 секунд
         setInterval(loadStats, 30000);
     </script>
 </body>
