@@ -1,8 +1,12 @@
 const express = require('express');
 const crypto = require('crypto');
 const TelegramBot = require('node-telegram-bot-api');
-
+const { createClient } = require('@supabase/supabase-js');
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);
 const app = express();
+
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
   res.header('Access-Control-Allow-Headers', 'Content-Type');
@@ -81,7 +85,7 @@ bot.on('web_app_data', (msg) => {
   console.log('🎮 Данные от игры:', msg.web_app_data.data);
   bot.sendMessage(msg.chat.id, `✅ Получил: ${msg.web_app_data.data}`);
 });
-app.post('/api/game-result', (req, res) => {
+app.post('/api/game-result', async (req, res) => {
   const { user_id, data, init_data } = req.body;
   
   // 1. ПРОВЕРЯЕМ ДАННЫЕ
@@ -89,7 +93,31 @@ app.post('/api/game-result', (req, res) => {
     console.error('❌ Неверные данные Telegram!');
     return res.status(403).send('Access denied');
   }
+  // 2. Если проверка прошла
+console.log('✅ Данные проверены, результат:', data);
+
+// 3. Сохраняем результат в базу данных
+try {
+  const gameType = data.startsWith('win:') ? 'guess_number' : 'other';
   
+  const { error } = await supabase
+    .from('game_results')
+    .insert([
+      {
+        user_id: user_id,
+        game_type: gameType,
+        result: data
+      }
+    ]);
+
+  if (error) {
+    console.error('❌ Ошибка сохранения в базу:', error);
+  } else {
+    console.log('💾 Результат сохранён в базу');
+  }
+} catch (dbError) {
+  console.error('❌ Ошибка подключения к базе:', dbError);
+}
   // 2. Если проверка прошла
   console.log('✅ Данные проверены, результат:', data);
 
