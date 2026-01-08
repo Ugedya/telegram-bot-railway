@@ -1,10 +1,10 @@
 const express = require('express');
 const crypto = require('crypto');
 const TelegramBot = require('node-telegram-bot-api');
-//const { createClient } = require('@supabase/supabase-js');
-//const supabaseUrl = process.env.SUPABASE_URL;
-//const supabaseKey = process.env.SUPABASE_KEY;
-//const supabase = createClient(supabaseUrl, supabaseKey);
+const { createClient } = require('@supabase/supabase-js');
+const supabaseUrl = 'https://ctlibigouzudjlqjixpl.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImN0bGliaWdvdXp1ZGpscWppeHBsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Njc4MzkxMDMsImV4cCI6MjA4MzQxNTEwM30.OGofJd4w1oHpBBsbrzzie8uR41A40TbIGMl0CUnBQgE';
+const supabase = createClient(supabaseUrl, supabaseKey);
 const app = express();
 
 app.use((req, res, next) => {
@@ -93,6 +93,48 @@ app.post('/api/game-result', async (req, res) => {
     console.error('❌ Неверные данные Telegram!');
     return res.status(403).send('Access denied');
   }
+  
+  // 2. Если проверка прошла
+  console.log('✅ Данные проверены, результат:', data);
+
+  // 3. Сохраняем результат в базу данных
+  try {
+    const gameType = data.startsWith('win:') ? 'guess_number' : 'other';
+    
+    const { error } = await supabase
+      .from('game_results')
+      .insert([
+        {
+          user_id: user_id,
+          game_type: gameType,
+          result: data
+        }
+      ]);
+
+    if (error) {
+      console.error('❌ Ошибка сохранения в базу:', error);
+    } else {
+      console.log('💾 Результат сохранён в базу');
+    }
+  } catch (dbError) {
+    console.error('❌ Ошибка подключения к базе:', dbError);
+  }
+  
+  // 4. Отправляем сообщение пользователю (в своём try-catch)
+  try {
+    if (data.startsWith('win:')) {
+      const attempts = data.split(':')[1];
+      await bot.sendMessage(user_id, `🎉 Ты угадал число с ${attempts} попытки!`);
+    } else {
+      await bot.sendMessage(user_id, `✅ Результат: ${data}`);
+    }
+  } catch (sendError) {
+    console.error('❌ Ошибка отправки сообщения:', sendError);
+  }
+  
+  // 5. Всегда отвечаем 200, даже если были ошибки в сохранении или отправке
+  res.sendStatus(200);
+});
   
   // 2. Если проверка прошла
   console.log('✅ Данные проверены, результат:', data);
