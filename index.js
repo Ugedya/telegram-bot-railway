@@ -96,14 +96,14 @@ app.post('/api/game-result', (req, res) => {
   // 3. Отправляем сообщение
   bot.sendMessage(user_id, `✅ Получил: ${data}`);
   
-  // 4. Если игра "Угадай число"
-  if (data.startsWith('win:')) {
-    const attempts = data.split(':')[1];
-    bot.sendMessage(user_id, `🎉 Ты угадал с ${attempts} попытки!`);
-  }
-  
-  res.sendStatus(200);
-});
+  // Если игра "Угадай число"
+if (data.startsWith('win:')) {
+  const attempts = data.split(':')[1];
+  bot.sendMessage(user_id, `🎉 Ты угадал число с ${attempts} попытки!`);
+} else {
+  // Для других игр
+  bot.sendMessage(user_id, `✅ Результат: ${data}`);
+}
 // Корень для проверки
 app.get('/', (req, res) => {
   res.send('Сервер работает');
