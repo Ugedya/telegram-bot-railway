@@ -82,11 +82,25 @@ bot.on('web_app_data', (msg) => {
   bot.sendMessage(msg.chat.id, `✅ Получил: ${msg.web_app_data.data}`);
 });
 app.post('/api/game-result', (req, res) => {
-  console.log('🎮 Результат игры:', req.body);
-  const { user_id, data } = req.body;
+  const { user_id, data, init_data } = req.body;
   
-  // Отправляем сообщение пользователю
-  bot.sendMessage(user_id, `✅ Получил результат: ${data}`);
+  // 1. ПРОВЕРЯЕМ ДАННЫЕ
+  if (!verifyTelegramData(init_data)) {
+    console.error('❌ Неверные данные Telegram!');
+    return res.status(403).send('Access denied');
+  }
+  
+  // 2. Если проверка прошла
+  console.log('✅ Данные проверены, результат:', data);
+  
+  // 3. Отправляем сообщение
+  bot.sendMessage(user_id, `✅ Получил: ${data}`);
+  
+  // 4. Если игра "Угадай число"
+  if (data.startsWith('win:')) {
+    const attempts = data.split(':')[1];
+    bot.sendMessage(user_id, `🎉 Ты угадал с ${attempts} попытки!`);
+  }
   
   res.sendStatus(200);
 });
