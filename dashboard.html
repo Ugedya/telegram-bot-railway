@@ -22,6 +22,8 @@
         th { background: rgba(255,255,255,0.05); }
         .user-id { font-family: monospace; background: rgba(0,0,0,0.2); padding: 5px 10px; border-radius: 5px; }
         .loading { text-align: center; font-size: 1.5rem; padding: 50px; }
+        #loadingIndicator { text-align: center; padding: 30px; font-size: 1.2rem; }
+        #errorMessage { display: none; text-align: center; padding: 20px; background: rgba(255,100,100,0.1); border-radius: 10px; margin-top: 20px; }
     </style>
 </head>
 <body>
@@ -31,7 +33,12 @@
             <p class="subtitle">Статистика по играм в реальном времени </p>
         </header>
 
-        <div class="stats-grid">
+        <div id="loadingIndicator">
+            ⏳ Загружаем статистику... (первая загрузка может занять до 30 секунд)
+        </div>
+        <div id="errorMessage"></div>
+
+        <div class="stats-grid" id="dashboardContent" style="display: none;">
             <div class="card">
                 <h2>🎮 Всего сыграно игр</h2>
                 <div class="total-number" id="totalGames">0</div>
@@ -53,7 +60,7 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card" id="timelineCard" style="display: none;">
             <h2>📊 Подробная статистика</h2>
             <div class="chart-container">
                 <canvas id="timelineChart"></canvas>
@@ -62,29 +69,40 @@
     </div>
 
     <script>
-        // API-адрес твоего сервера
-        const API_URL = 'https://telegram-bot-railway-production-0184.up.railway.app/api/stats'; 
+        const API_URL = 'https://telegram-bot-railway-production-0184.up.railway.app/api/stats';
 
         async function loadStats() {
             try {
-                const response = await fetch(API_URL);
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 45000);
+                
+                const response = await fetch(API_URL, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
                 const result = await response.json();
+                if (!result.success) throw new Error('API error');
                 
-                if (!result.success) throw new Error('Ошибка API');
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('errorMessage').style.display = 'none';
+                document.getElementById('dashboardContent').style.display = 'grid';
+                document.getElementById('timelineCard').style.display = 'block';
                 
-                const data = result.data;
-                updateDashboard(data);
+                updateDashboard(result.data);
             } catch (error) {
-                console.error('❌ Ошибка загрузки статистики:', error);
-                document.body.innerHTML = `<div class="loading">⚠️ Не удалось загрузить данные. Проверь API_URL.</div>`;
+                console.log('⚠️', error.message);
+                document.getElementById('loadingIndicator').innerHTML = 
+                    `⏳ Сервер просыпается... Пробуем ещё раз через 5 сек <br><small>${error.message}</small>`;
+                document.getElementById('loadingIndicator').style.display = 'block';
+                
+                setTimeout(loadStats, 5000);
             }
         }
 
         function updateDashboard(data) {
-            // 1. Общее количество игр
             document.getElementById('totalGames').textContent = data.totalGames;
 
-            // 2. Круговая диаграмма
             const gamesByType = data.gamesByType;
             const pieCtx = document.getElementById('gamesChart').getContext('2d');
             new Chart(pieCtx, {
@@ -102,7 +120,6 @@
                 }
             });
 
-            // 3. Таблица последних игр
             const recentBody = document.getElementById('recentGamesBody');
             recentBody.innerHTML = '';
             data.recentGames.forEach(game => {
@@ -114,7 +131,6 @@
                 recentBody.innerHTML += row;
             });
 
-            // 4. График по времени (заглушка для примера)
             const timelineCtx = document.getElementById('timelineChart').getContext('2d');
             new Chart(timelineCtx, {
                 type: 'line',
@@ -122,7 +138,7 @@
                     labels: ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'],
                     datasets: [{
                         label: 'Активность (игр/день)',
-                        data: [3, 7, 12, 5, 9, 15, 8],
+                        data: [data.totalGames, 0, 0, 0, 0, 0, 0],
                         borderColor: '#00FF9D',
                         backgroundColor: 'rgba(0, 255, 157, 0.1)',
                         tension: 0.4
@@ -139,38 +155,7 @@
             });
         }
 
-        // Загружаем данные при старте
-    async function loadStats() {
-    // Показываем индикатор загрузки
-    document.getElementById('loadingIndicator').style.display = 'block';
-    document.getElementById('errorMessage').style.display = 'none';
-    
-    try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 45000); // 45 секунд
-        
-        const response = await fetch(API_URL, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
-        const result = await response.json();
-        if (!result.success) throw new Error('API error');
-        
-        // Скрываем индикатор, показываем данные
-        document.getElementById('loadingIndicator').style.display = 'none';
-        updateDashboard(result.data);
-        
-    } catch (error) {
-        console.log('⚠️', error.message);
-        document.getElementById('loadingIndicator').innerHTML = 
-            '⏳ Сервер просыпается... Пробуем ещё раз через 5 сек';
-        document.getElementById('loadingIndicator').style.display = 'block';
-        
-        // Повторяем через 5 секунд
-        setTimeout(loadStats, 5000);
-    }
-}   // Обновляем каждые 30 секунд
+        loadStats();
         setInterval(loadStats, 30000);
     </script>
 </body>
