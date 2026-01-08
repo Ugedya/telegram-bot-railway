@@ -18,6 +18,37 @@ app.use(express.json());
 
 const token = process.env.BOT_TOKEN;
 const bot = new TelegramBot(token);
+// Функция проверки данных Telegram
+function verifyTelegramData(initData) {
+  try {
+    // 1. Разбираем строку на параметры
+    const params = new URLSearchParams(initData);
+    const hash = params.get('hash');
+    
+    // 2. Удаляем hash для проверки
+    params.delete('hash');
+    
+    // 3. Сортируем оставшиеся параметры
+    const sorted = Array.from(params.entries()).sort(([a], [b]) => a.localeCompare(b));
+    const dataCheckString = sorted.map(([key, value]) => `${key}=${value}`).join('\n');
+    
+    // 4. Создаём секретный ключ
+    const secretKey = crypto.createHmac('sha256', 'WebAppData')
+      .update(process.env.BOT_TOKEN)
+      .digest();
+    
+    // 5. Вычисляем хэш
+    const calculatedHash = crypto.createHmac('sha256', secretKey)
+      .update(dataCheckString)
+      .digest('hex');
+    
+    // 6. Сравниваем
+    return calculatedHash === hash;
+  } catch (err) {
+    console.error('Ошибка проверки:', err);
+    return false;
+  }
+}
 bot.on('raw', (update) => {
   console.log('📦 RAW update:', JSON.stringify(update));
 });
