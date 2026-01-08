@@ -135,6 +135,55 @@ app.post('/api/game-result', async (req, res) => {
   // 5. Всегда отвечаем 200, даже если были ошибки в сохранении или отправке
   res.sendStatus(200);
 });
+// Эндпоинт для получения статистики (для дашборда)
+app.get('/api/stats', async (req, res) => {
+  try {
+    // 1. Общее количество игр
+    const { count: totalGames, error: countError } = await supabase
+      .from('game_results')
+      .select('*', { count: 'exact', head: true });
+
+    if (countError) throw countError;
+
+    // 2. Количество игр по типам
+    const { data: gamesByType, error: typeError } = await supabase
+      .from('game_results')
+      .select('game_type')
+      .then(result => {
+        // Группируем вручную, так как Supabase не поддерживает GROUP BY в бесплатном плане
+        const grouped = {};
+        result.data?.forEach(row => {
+          grouped[row.game_type] = (grouped[row.game_type] || 0) + 1;
+        });
+        return { data: grouped, error: result.error };
+      });
+
+    if (typeError) throw typeError;
+
+    // 3. Последние 10 игр (для таблицы)
+    const { data: recentGames, error: recentError } = await supabase
+      .from('game_results')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(30);
+
+    if (recentError) throw recentError;
+
+    // 4. Собираем ответ
+    res.json({
+      success: true,
+      data: {
+        totalGames: totalGames || 0,
+        gamesByType: gamesByType || {},
+        recentGames: recentGames || []
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Ошибка получения статистики:', error);
+    res.status(500).json({ success: false, error: 'Database error' });
+  }
+});
 // Корень для проверки
 app.get('/', (req, res) => {
   res.send('Сервер работает');
