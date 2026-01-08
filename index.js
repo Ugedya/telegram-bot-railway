@@ -103,7 +103,8 @@ if (data.startsWith('win:')) {
 } else {
   // Для других игр
   bot.sendMessage(user_id, `✅ Результат: ${data}`);
-}
+}}
+         res.sendStatus(200);
 // Корень для проверки
 app.get('/', (req, res) => {
   res.send('Сервер работает');
