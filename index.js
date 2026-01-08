@@ -1,10 +1,10 @@
 const express = require('express');
 const crypto = require('crypto');
 const TelegramBot = require('node-telegram-bot-api');
-const { createClient } = require('@supabase/supabase-js');
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+//const { createClient } = require('@supabase/supabase-js');
+//const supabaseUrl = process.env.SUPABASE_URL;
+//const supabaseKey = process.env.SUPABASE_KEY;
+//const supabase = createClient(supabaseUrl, supabaseKey);
 const app = express();
 
 app.use((req, res, next) => {
