@@ -69,7 +69,6 @@
             </div>
 
     <script>
-        alert('Telegram WebApp доступен? ' + (typeof window.Telegram !== 'undefined'));
     const API_URL = 'https://telegram-bot-railway-production-0184.up.railway.app/api/stats';
     
     // Переменные для хранения экземпляров графиков
@@ -171,24 +170,6 @@
     }
     loadStats();
     setInterval(loadStats, 30000);
-         if (typeof window.Telegram !== 'undefined') {
-        const tg = window.Telegram.WebApp;
-        tg.ready();
-        tg.expand();
-        tg.MainButton.setText("Написать разработчику");
-        tg.MainButton.show();
-        tg.MainButton.onClick(() => {
-            tg.openLink("https://t.me/ed_d1a");
-        });
-        
-        console.log('📍 Проверка окружения:');
-        console.log('1. Внутри Telegram WebApp?', tg.initData || 'нет');
-        console.log('2. URL:', window.location.href);
-        console.log('3. Если открыто через window.open?', window.opener ? 'да' : 'нет');
-        console.log('4. Если открыто через iframe?', window.parent !== window ? 'да' : 'нет');
-    } else {
-        console.log('❌ Telegram WebApp SDK не доступен');
-    }
 </script>
 </body>
 </html>
