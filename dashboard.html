@@ -170,6 +170,16 @@
     }
     loadStats();
     setInterval(loadStats, 30000);
+        if (typeof window.Telegram !== 'undefined') {
+    const tg = window.Telegram.WebApp;
+    tg.ready();
+    tg.expand();
+    tg.MainButton.setText("Написать разработчику");
+    tg.MainButton.show();
+    tg.MainButton.onClick(() => {
+        tg.openLink("https://t.me/ed_d1a");
+    });
+}
 </script>
 </body>
 </html>
