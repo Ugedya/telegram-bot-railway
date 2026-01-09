@@ -66,15 +66,7 @@
                 <canvas id="timelineChart"></canvas>
             </div>
         </div>
-        <div class="card" style="text-align: center; margin-top: 30px;">
-            <button id="contactButton" style="background: #3390ec; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px;">
-                💬 Написать разработчику
-            </button>
-            <p style="margin-top: 10px; opacity: 0.8; font-size: 0.9rem;" id="contactHint">
-                (Откроется в Telegram)
-            </p>
-        </div>
-    </div>
+            </div>
 
     <script>
     const API_URL = 'https://telegram-bot-railway-production-0184.up.railway.app/api/stats';
@@ -176,17 +168,6 @@
             }
         });
     }
-document.getElementById('contactButton').addEventListener('click', function() {
-            const tg = window.Telegram?.WebApp;
-            
-            if (tg) {
-                // Мы внутри Telegram WebApp
-                tg.openLink('https://t.me/ed_d1a'); 
-            } else {
-                // Мы в обычном браузере
-                window.open('https://t.me/ed_d1a', '_blank'); 
-            }
-        });
     loadStats();
     setInterval(loadStats, 30000);
 </script>
