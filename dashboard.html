@@ -180,6 +180,11 @@
         tg.openLink("https://t.me/ed_d1a");
     });
 }
+        console.log('📍 Проверка окружения:');
+console.log('1. Внутри Telegram WebApp?', window.Telegram?.WebApp?.initData || 'нет');
+console.log('2. URL:', window.location.href);
+console.log('3. Если открыто через window.open?', window.opener ? 'да' : 'нет');
+console.log('4. Если открыто через iframe?', window.parent !== window ? 'да' : 'нет');
 </script>
 </body>
 </html>
