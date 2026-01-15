@@ -185,6 +185,35 @@ app.get('/api/stats', async (req, res) => {
     res.status(500).json({ success: false, error: 'Database error' });
   }
 });
+// ================== МАГАЗИН ОДЕЖДЫ ==================
+// Тестовый эндпоинт для проверки связи с Supabase
+app.get('/api/test-db', async (req, res) => {
+  try {
+    const { data, error } = await supabase.from('products').select('*').limit(1);
+    if (error) throw error;
+    res.json({ success: true, message: 'База данных подключена', data: data || [] });
+  } catch (error) {
+    console.error('❌ Ошибка подключения к БД:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// Эндпоинт для получения списка товаров
+app.get('/api/products', async (req, res) => {
+  try {
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .eq('is_active', true)
+      .order('created_at', { ascending: false });
+    
+    if (error) throw error;
+    res.json({ success: true, products: data || [] });
+  } catch (error) {
+    console.error('❌ Ошибка загрузки товаров:', error);
+    res.status(500).json({ success: false, error: 'Ошибка загрузки товаров' });
+  }
+});
 // Корень для проверки
 app.get('/', (req, res) => {
   res.send('Сервер работает');
